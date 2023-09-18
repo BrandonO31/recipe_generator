@@ -6,5 +6,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry excluding="main/java/GmailQuickstart.java|main/java/" kind="src" path="src"/>
+	<classpathentry kind="lib" path="C:/Users/brand/Downloads/drive-download-20230916T014824Z-001/javax.mail.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
