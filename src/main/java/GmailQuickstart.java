@@ -1,3 +1,6 @@
+import java.util.Arrays;
+import java.util.Set;
+
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
@@ -12,6 +15,7 @@ import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.GmailScopes;
 import com.google.api.services.gmail.model.Label;
 import com.google.api.services.gmail.model.ListLabelsResponse;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,28 +23,35 @@ import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
+import javax.mail.MessagingException;
+
+import java.io.ByteArrayOutputStream;
+import java.util.Properties;
+
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.util.Base64;
+import com.google.api.services.gmail.model.Message;
+import com.google.api.client.googleapis.json.GoogleJsonError;
 
 /* class to demonstrate use of Gmail list labels API */
+
 public class GmailQuickstart {
-  /**
-   * Application name.
-   */
+  
   private static final String APPLICATION_NAME = "Gmail API Java Quickstart";
-  /**
-   * Global instance of the JSON factory.
-   */
+  
   private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-  /**
-   * Directory to store authorization tokens for this application.
-   */
+  
   private static final String TOKENS_DIRECTORY_PATH = "tokens";
 
-  /**
-   * Global instance of the scopes required by this quickstart.
-   * If modifying these scopes, delete your previously saved tokens/ folder.
-   */
-  private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_LABELS);
-  private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
+ 
+  private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_SEND);
+  
+  private static final String CREDENTIALS_FILE_PATH = "/client_secret_103951197111-6u9pbh8dsvqvmehrqr5rrn3v8c3ol15t.apps.googleusercontent.com.json";
 
   /**
    * Creates an authorized Credential object.
@@ -71,24 +82,55 @@ public class GmailQuickstart {
     return credential;
   }
 
-  public static void main(String... args) throws IOException, GeneralSecurityException {
-    // Build a new authorized API client service.
-    final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-    Gmail service = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-        .setApplicationName(APPLICATION_NAME)
-        .build();
+  public static void main(String... args) throws IOException, GeneralSecurityException, MessagingException {
+      // Build a new authorized API client service.
+      final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+      Gmail service = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+              .setApplicationName(APPLICATION_NAME)
+              .build();
 
-    // Print the labels in the user's account.
-    String user = "me";
-    ListLabelsResponse listResponse = service.users().labels().list(user).execute();
-    List<Label> labels = listResponse.getLabels();
-    if (labels.isEmpty()) {
-      System.out.println("No labels found.");
-    } else {
-      System.out.println("Labels:");
-      for (Label label : labels) {
-        System.out.printf("- %s\n", label.getName());
-      }
-    }
+      // Declare and initialize email addresses
+      String fromEmailAddress = "your.recipe.generator@gmail.com";
+      String toEmailAddress = "your.recipe.generator@gmail.com";
+
+      // Create the email content
+      String messageSubject = "Test message";
+      String bodyText = "Lorem ipsum.";
+
+      // Encode as MIME message
+      Properties props = new Properties();
+      Session session = Session.getDefaultInstance(props, null);
+      MimeMessage email = new MimeMessage(session);
+      email.setFrom(new InternetAddress(fromEmailAddress));
+      email.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toEmailAddress));
+      email.setSubject(messageSubject);
+      email.setText(bodyText);
+
+      // Encode and wrap the MIME message into a Gmail message
+      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+      email.writeTo(buffer);
+      byte[] rawMessageBytes = buffer.toByteArray();
+      String encodedEmail = Base64.encodeBase64URLSafeString(rawMessageBytes);
+      Message message = new Message();
+      message.setRaw(encodedEmail);
+
+      try {
+    	    // Create and send the message
+    	    message = service.users().messages().send("me", message).execute(); 
+    	    System.out.println("Message id: " + message.getId());
+    	    System.out.println(message.toPrettyString());
+    	} catch (GoogleJsonResponseException e) {
+    	    // Handle the exception appropriately
+    	    e.printStackTrace();
+    	    GoogleJsonError error = e.getDetails();
+    	    if (error.getCode() == 403) {
+    	        System.err.println("Unable to send message: " + e.getDetails());
+    	    } else {
+    	        throw e;
+    	    }
+    	}
+
+
+    
   }
 }
