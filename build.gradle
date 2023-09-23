@@ -19,6 +19,6 @@ dependencies {
     
   
     implementation 'commons-codec:commons-codec:1.15'
-     
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
 }
 

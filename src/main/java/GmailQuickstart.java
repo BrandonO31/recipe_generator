@@ -44,6 +44,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
+
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+
+
 import com.google.api.client.googleapis.json.GoogleJsonError;
 
 /* class to demonstrate use of Gmail list labels API */
@@ -90,7 +97,7 @@ public class GmailQuickstart {
     return credential;
   }
   
-  public static String makeRecipeApiCall(String food) throws IOException {
+  public static String makeRecipeApiCall(String food) throws IOException, ParseException {
 	  String appId = "0482f7ae"; // Replace with your actual app ID
       String appKey = "7a466c603def43d87939ffc4c0f83bb3"; // Replace with your actual app key
       String query = food; // Replace with your search query
@@ -98,7 +105,7 @@ public class GmailQuickstart {
 
       HttpClient client = HttpClient.newHttpClient();
       String apiUrl = "https://api.edamam.com/api/recipes/v2";
-      URI uri = URI.create(apiUrl + "?q=" + query + "&app_id=" + appId + "&app_key=" + appKey + "&type=" + type); // Include the "type" parameter
+      URI uri = URI.create(apiUrl + "?q=" + query + "&app_id=" + appId + "&app_key=" + appKey + "&type=" + type); 
       HttpRequest request = HttpRequest.newBuilder()
               .uri(uri)
               .GET()
@@ -115,13 +122,41 @@ public class GmailQuickstart {
           return responseBody; // Return the API response
       }).join();
   }
+  
+  public static String[] getRecipeNames(String responseBody, int limit) {
+	    // Parse the JSON response
+	    JSONParser parser = new JSONParser();
+	    try {
+	        JSONObject jsonResponse = (JSONObject) parser.parse(responseBody);
+
+	        // Get the "hits" array
+	        JSONArray hitsArray = (JSONArray) jsonResponse.get("hits");
+
+	        int numRecipes = Math.min(limit, hitsArray.size()); // Limit the number of recipes
+
+	        String[] recipeNames = new String[numRecipes];
+	        for (int index = 0; index < numRecipes; index++) {
+	            JSONObject hitObject = (JSONObject) hitsArray.get(index);
+	            JSONObject recipeObject = (JSONObject) hitObject.get("recipe");
+	            String recipeName = (String) recipeObject.get("label");
+	            recipeNames[index] = recipeName;
+	        }
+
+	        return recipeNames;
+	    } catch (ParseException e) {
+	        e.printStackTrace();
+	        return new String[0]; // Handle the exception or return an empty array
+	    }
+	}
+
+
 	   
 	
 
 
 
 
-  public static void main(String... args) throws IOException, GeneralSecurityException, MessagingException {
+  public static void main(String... args) throws IOException, GeneralSecurityException, MessagingException, ParseException {
       // Build a new authorized API client service.
       final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
       Gmail service = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
@@ -150,6 +185,7 @@ public class GmailQuickstart {
       String food = JOptionPane.showInputDialog("What food would you like to create?");
       
       String responseBody = makeRecipeApiCall(food);
+      String[] recipeNames = getRecipeNames(responseBody, 5);
       System.out.println(food);
       
       
@@ -169,8 +205,12 @@ public class GmailQuickstart {
 
       // Create the email content
       String messageSubject = "Test message";
-      String bodyText = responseBody;
+      String bodyText = String.join("\n", recipeNames);
 
+      System.out.println("Recipe Names:");
+      for (String recipeName : recipeNames) {
+          System.out.println(recipeName);
+      }
       // Encode as MIME message
       Properties props = new Properties();
       Session session = Session.getDefaultInstance(props, null);
