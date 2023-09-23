@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import javax.swing.JOptionPane;
 import java.util.Set;
 
 import com.google.api.client.auth.oauth2.Credential;
@@ -89,9 +90,17 @@ public class GmailQuickstart {
               .setApplicationName(APPLICATION_NAME)
               .build();
 
+      
+      
       // Declare and initialize email addresses
       String fromEmailAddress = "your.recipe.generator@gmail.com";
-      String toEmailAddress = "your.recipe.generator@gmail.com";
+      String toEmailAddress = JOptionPane.showInputDialog(null, "Enter the email address:");
+
+      if (toEmailAddress == null) {
+          // The user canceled the input dialog, so we exit gracefully
+          System.out.println("Email address input canceled. Exiting.");
+          System.exit(0);
+      }
 
       // Create the email content
       String messageSubject = "Test message";
