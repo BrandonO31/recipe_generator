@@ -38,6 +38,12 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.util.Base64;
 import com.google.api.services.gmail.model.Message;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.concurrent.CompletableFuture;
+
 import com.google.api.client.googleapis.json.GoogleJsonError;
 
 /* class to demonstrate use of Gmail list labels API */
@@ -83,6 +89,37 @@ public class GmailQuickstart {
     //returns an authorized Credential object.
     return credential;
   }
+  
+  public static String makeRecipeApiCall(String food) throws IOException {
+	  String appId = "0482f7ae"; // Replace with your actual app ID
+      String appKey = "7a466c603def43d87939ffc4c0f83bb3"; // Replace with your actual app key
+      String query = food; // Replace with your search query
+      String type = "public"; // Specify the type parameter
+
+      HttpClient client = HttpClient.newHttpClient();
+      String apiUrl = "https://api.edamam.com/api/recipes/v2";
+      URI uri = URI.create(apiUrl + "?q=" + query + "&app_id=" + appId + "&app_key=" + appKey + "&type=" + type); // Include the "type" parameter
+      HttpRequest request = HttpRequest.newBuilder()
+              .uri(uri)
+              .GET()
+              .build();
+
+      CompletableFuture<HttpResponse<String>> response = client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+      return response.thenApply(res -> {
+          int statusCode = res.statusCode();
+          String responseBody = res.body();
+
+          System.out.println("Status Code: " + statusCode);
+         
+
+          return responseBody; // Return the API response
+      }).join();
+  }
+	   
+	
+
+
+
 
   public static void main(String... args) throws IOException, GeneralSecurityException, MessagingException {
       // Build a new authorized API client service.
@@ -91,6 +128,8 @@ public class GmailQuickstart {
               .setApplicationName(APPLICATION_NAME)
               .build();
 
+      
+      
       
       //JOption for inputs of food and gmail
       boolean val = false;
@@ -109,6 +148,8 @@ public class GmailQuickstart {
       
       
       String food = JOptionPane.showInputDialog("What food would you like to create?");
+      
+      String responseBody = makeRecipeApiCall(food);
       System.out.println(food);
       
       
@@ -128,7 +169,7 @@ public class GmailQuickstart {
 
       // Create the email content
       String messageSubject = "Test message";
-      String bodyText = "Lorem ipsum.";
+      String bodyText = responseBody;
 
       // Encode as MIME message
       Properties props = new Properties();
