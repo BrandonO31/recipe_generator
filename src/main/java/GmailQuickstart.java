@@ -37,6 +37,7 @@ import javax.mail.internet.MimeMessage;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.util.Base64;
 import com.google.api.services.gmail.model.Message;
+
 import com.google.api.client.googleapis.json.GoogleJsonError;
 
 /* class to demonstrate use of Gmail list labels API */
@@ -91,10 +92,33 @@ public class GmailQuickstart {
               .build();
 
       
+      //JOption for inputs of food and gmail
+      boolean val = false;
+  	  String address;
+
+      do{
+    	  address = JOptionPane.showInputDialog("What is your gmail address?");
+          System.out.println(address);
+          
+          if(address != null && address.endsWith("@gmail.com")) {
+          	val = true;
+          } else {
+          	JOptionPane.showMessageDialog(null, "Please enter a valid address");
+          }
+      } while(!val);
+      
+      
+      String food = JOptionPane.showInputDialog("What food would you like to create?");
+      System.out.println(food);
+      
+      
+  	 //tester.initialize(address, food); THIS IS FOR GUI
+
+      
       
       // Declare and initialize email addresses
       String fromEmailAddress = "your.recipe.generator@gmail.com";
-      String toEmailAddress = JOptionPane.showInputDialog(null, "Enter the email address:");
+      String toEmailAddress = address;
 
       if (toEmailAddress == null) {
           // The user canceled the input dialog, so we exit gracefully
